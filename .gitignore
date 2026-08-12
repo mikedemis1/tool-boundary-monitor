@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# DEFAULT DENY.
+#
+# Everything in this repository is ignored unless it is explicitly allowed
+# below. This is deliberate: sources/ contains the professor's unpublished
+# draft and the diploma thesis, and git history is permanent. A blocklist
+# fails open (forget one pattern and it leaks); an allowlist fails closed.
+#
+# To publish a new file or folder, add an explicit "!" line for it.
+# If a new file does not show up in `git status`, that is this rule working.
+# ---------------------------------------------------------------------------
+
+# Ignore everything at the repository root
+/*
+
+# --- Explicitly published -------------------------------------------------
+!.gitignore
+!README.md
+!LICENSE
+!docs/
+
+# --- Never published, listed again for clarity ----------------------------
+# sources/    professor's draft + thesis — not ours to publish
+# _memory/    raw working notes
+# research/   internal research notes
+# CLAUDE.md   internal working rules
+# MAP.md      personal cheat sheet
+
+# --- Standard exclusions (apply inside allowed folders too) ---------------
+.env
+.env.*
+*.key
+*.pem
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+Thumbs.db
