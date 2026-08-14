@@ -40,9 +40,10 @@ the action, rather than at the language, still sees it.
 
 **Design phase. Nothing is implemented yet.**
 
-This repository currently contains documentation only. It is public from the
-first commit because the build history is part of the record, not because there
-is anything to run.
+This repository currently contains documentation only. It is private while the
+paper is unpublished, and will be opened once there is something to run — the
+commit history and its dates survive that change, so the build record is kept
+either way.
 
 Planned, in order:
 
