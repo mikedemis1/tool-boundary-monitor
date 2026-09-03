@@ -40,14 +40,15 @@ the action, rather than at the language, still sees it.
 
 **Design phase. Nothing is implemented yet.**
 
-This repository currently contains documentation only. It is private while the
-paper is unpublished, and will be opened once there is something to run — the
-commit history and its dates survive that change, so the build record is kept
-either way.
+This repository currently contains documentation only, and it is public from the
+design stage on purpose: the reasoning is the part worth reading before there is
+anything to run, and the commit history dates that reasoning. The paper itself is
+unpublished and is not in this repository.
 
 Planned, in order:
 
-- [ ] Threat model — assets, attacker capabilities, harm definitions
+- [x] Threat model — tool inventory, attacker capabilities, assets and harm
+      (Sections 2, 3 and 4 written; system model and non-goals still open)
 - [ ] Gateway architecture — event schema, canonicalization, policy store
 - [ ] Local generation of labelled benign and attack episodes
 - [ ] Hard policy layer
