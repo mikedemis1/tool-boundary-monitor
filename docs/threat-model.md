@@ -17,17 +17,116 @@ any false-positive rate measured there would be reporting a benchmark bug the
 maintainers have already fixed. At `v1.1.1`+ the recipient is
 `CA133012400231215421872` and the collision is gone.
 
-> **Status:** Sections 2, 3 and 4 complete, verified against installed source
-> (2 and 4 on 2026-08-14, 3 on 2026-09-03). Sections 1 and 5 to be written.
+> **Status:** Sections 1, 2, 3 and 4 complete, verified against installed source
+> (2 and 4 on 2026-08-14, 3 and 1 on 2026-09-04). Section 5 to be written.
 
 ---
 
 ## 1. System model
 
-*To be written: who talks to whom, what the gateway sits between, what is inside
-and outside the trust boundary.*
+Written last, on purpose. A trust boundary is a line drawn between what an
+attacker controls and what he does not, and neither side of that line could be
+stated before Sections 2, 3 and 4 said what the tools are, what the attacker can
+reach, and what is worth protecting.
 
-### 1.x Why the arguments are the attack surface
+### 1.1 The four participants
+
+```
+  USER ──prompt──▶ MODEL ──proposed tool call──▶ RUNTIME ──▶ ENVIRONMENT
+                     ▲                                            │
+                     └────────── tool result, as text ────────────┘
+```
+
+**The user** states the task in natural language and is the only source of
+authority in the system. Nothing else in the loop has a mandate of its own.
+
+**The model** chooses which tool to call and what to put in its arguments. It
+holds every tool for every task: the banking suite exposes all eleven regardless
+of what was asked, and defines no scopes, no roles and no per-task restriction.
+AgentDojo does ship an optional `tool_filter` defense that narrows the tool set
+per query (`agent_pipeline/agent_pipeline.py`), but that is a defense someone
+switches on, not a property of the environment, and it is not part of the
+baseline this document describes.
+
+**The runtime** executes what the model proposed. In AgentDojo the harness is a
+chain of pipeline elements, and tool execution is one element in that chain
+(`agent_pipeline/tool_execution.py`, `ToolsExecutor`): it reads the tool calls
+from the last assistant message, invokes them, serialises each return value to
+text and appends it to the conversation. The only checks before execution are
+that the function name is non-empty and exists. It does not evaluate the call.
+
+Two details of that serialisation matter later. The text format is not uniform:
+`tool_result_to_str` applies `yaml.safe_dump` only to a `BaseModel` or a list of
+them — in this suite that is just `get_most_recent_transactions` and
+`get_scheduled_transactions` — and falls through to `str()` for everything else;
+the formatter is also swappable for JSON. And a failing call does not abort the
+episode: `run_function` returns an empty result plus an error string
+(`functions_runtime.py`, `raise_on_error=False` by default), the runtime carries
+that string in a separate `error` field, and each model adapter substitutes it
+for the message content. The route differs from a successful result, but the
+outcome is the same — a rejected call is one more message the model gets to
+read.
+
+**The environment** is the state the tools read and write: the bank account and
+its transactions, the scheduled transactions, the user profile, the filesystem.
+This is what Section 4 enumerates as assets.
+
+### 1.2 Where the boundary actually is
+
+The boundary is not the network, and not the process. Everything here runs in one
+place, with one identity, on behalf of one user. A conventional perimeter has
+nothing to separate.
+
+The boundary is a **moment**: the point at which a proposed tool call becomes an
+executed one. Before it, everything is text — a suggestion the model has emitted,
+reversible at zero cost. After it, the environment has changed, and Section 2.3
+establishes that in this domain much of that change cannot be walked back: there
+is no deletion primitive for a scheduled payment and `recurring` cannot be turned
+off again.
+
+Placing the line there follows from Section 3 rather than from preference. Entry
+and harm are always different tools (3.1), so a boundary drawn at the read side
+would guard a call that does nothing. The write call is the last point at which
+the effect is still undetermined.
+
+**It is not, however, the point at which everything relevant is visible in the
+arguments.** `update_scheduled_transaction` requires only `id`; every other field
+is optional, and the suite's own legitimate use exercises that — UserTask2's
+ground truth is `{"id": 7, "amount": 1200}`, with no recipient and no subject in
+the call at all (2.3, 3.7). The destination and the outgoing text stay in the
+stored record the call addresses. What crosses the boundary is therefore **a
+proposed call together with the state it points at**, not a self-contained
+argument list, and any monitor that reads only the arguments is blind on exactly
+the tool Sections 2.3 and 3.7 single out as the quietest.
+
+### 1.3 Trusted, untrusted, and the awkward middle
+
+**Trusted:** the user's prompt, the runtime, and the tool implementations. The
+tools are assumed to do exactly what their code says — their weaknesses are
+recorded in Section 2.3 as facts about the environment, not as compromise.
+
+**Untrusted:** every byte that comes back from a tool. The result of
+`get_most_recent_transactions` is a data structure serialised into text and
+appended to the same conversation that carries the user's instructions. At that
+point instruction and data are the same kind of object, and Section 3.3 shows
+this is the dominant channel, not the exotic one.
+
+**The awkward middle is the model.** It sits inside the trust zone by privilege
+and outside it by behaviour: it acts with the user's full authority while
+executing text it did not author and cannot attribute. It is not assumed to be
+malicious, backdoored or replaced — only manipulable. That single assumption is
+what makes a monitor necessary, because a component that is trusted with
+authority but not trustworthy about origin cannot be secured by asking it to
+behave.
+
+### 1.4 Out of scope
+
+No attacker on the network, on the host or in the supply chain. No compromised
+tool implementation, no tampered model weights, no malicious user. The only
+adversary modelled is the one in Section 3, whose entire capability is writing
+text that the agent will later read.
+
+### 1.5 Why the arguments are the attack surface
 
 A conventional application does not have this problem. A "Pay rent" button is
 wired to stored values:
@@ -36,9 +135,11 @@ wired to stored values:
 user clicks "Pay rent"  →  pay(stored_iban, stored_amount)
 ```
 
-The IBAN comes from the database. No model decides anything, and no text the
-user has received can change where the money goes. The flow is fixed, and a
-fixed flow cannot be redirected.
+In such a flow the IBAN is retrieved from storage rather than produced at
+request time. No model decides anything, and no text the user has received can
+change where the money goes. The flow is fixed, and a fixed flow cannot be
+redirected. (This is an idealised baseline used for contrast, not a measured
+claim about any particular application.)
 
 An agent is the opposite. The user writes a sentence, and the model decides
 which tool to call **and what to put in its arguments**:
@@ -56,8 +157,11 @@ This is visible directly in the benchmark. The environment ships a file
 `landlord-notices.txt` announcing a rent increase and asking the tenant to
 adjust their standing order, with an attacker-controlled span inside it
 (`{injection_landloard_notice}`). The corresponding task cannot be served by a
-stored value: the new amount only exists inside the document. Reading the
-document is the task. The attacker writes in the same document.
+stored value alone. The notice states an increase — *"the rent will be increased
+by 100.00"* — while the standing order it refers to (id 7) holds `1100.0`. The
+figure the task actually needs, `1200`, is in neither place: it has to be
+computed from the document and the record together. Reading the document is the
+task. The attacker writes in the same document.
 
 The consequence is not a defect to be fixed:
 
@@ -68,10 +172,17 @@ The consequence is not a defect to be fixed:
 | Can be redirected by content it reads | no | **yes** |
 
 **Flexibility is the exposure.** If the flow is fixed, an agent is not needed;
-the moment an agent is used, tool arguments become model output, and model
-output is influenced by everything the model has read. This is why the agent is
-placed on the untrusted side of the boundary, and why the monitor evaluates the
-proposed arguments rather than the text that produced them.
+the moment an agent is used, tool arguments become model output, and model output
+is influenced by everything the model has read. This is why a call cannot be
+treated as authorised merely because the model emitted it (1.3).
+
+It is also why the **hook point** is the proposed call — and the hook point must
+not be confused with the **decision rule**. The call is *where* the decision is
+taken, because that is the last moment before the effect lands. It is not *what*
+the decision is taken on: Sections 3.4 and 4.4 show that a harmful call and a
+legitimate one in this suite can be identical in content and authority, so the
+arguments cannot separate them. What separates them is where the instruction
+behind them came from.
 
 ---
 
