@@ -17,8 +17,9 @@ any false-positive rate measured there would be reporting a benchmark bug the
 maintainers have already fixed. At `v1.1.1`+ the recipient is
 `CA133012400231215421872` and the collision is gone.
 
-> **Status:** Sections 1, 2, 3 and 4 complete, verified against installed source
-> (2 and 4 on 2026-08-14, 3 and 1 on 2026-09-04). Section 5 to be written.
+> **Status:** complete. All five sections written and verified against installed
+> source — 2 and 4 on 2026-08-14, 3 on 2026-09-03, 1 and 5 on 2026-09-04.
+> Section 5 records what this analysis does *not* cover.
 
 ---
 
@@ -368,6 +369,11 @@ over all 16 user tasks:
 - **4 of 16 expose a file vector** — task 0 (`injection_bill_text`), tasks 2 and
   12 (`injection_landloard_notice`), task 13 (`injection_address_change`).
 - **Every task exposes exactly one slot.** No task in the suite surfaces two.
+
+This is a **lower bound on exposure, not an exact count**: the procedure runs the
+ground-truth tool sequence, and a live model that explores more widely can surface
+slots the ground truth never touches. See 5.1 — the argument below needs only the
+bound, not the exact figure.
 
 Two consequences.
 
@@ -727,6 +733,91 @@ stated as such.
 
 ---
 
-## 5. Non-goals
+## 5. Limits of this analysis
 
-*To be written: what this monitor does not claim to do.*
+This section is about **this document**, not about the monitor. What the gateway
+will and will not promise belongs with the gateway, which is not described here;
+the repository README states those promises and this section does not repeat
+them.
+
+It is also distinct from Section 1.4. That listed the adversaries **not
+modelled** — network, host, supply chain, malicious user. This lists what the
+analysis **did not measure or cover**, given the adversary it does model.
+
+### 5.1 Nothing here was produced by running a model
+
+Every fact in Sections 2, 3 and 4 was read out of installed source or produced by
+executing the benchmark's own ground-truth pipelines. **No language model was
+called at any point**, and this is a deliberate choice — a threat model that
+depends on one model's behaviour is a report about that model.
+
+It has one consequence that qualifies the headline result. The measurement in 3.3
+reproduces AgentDojo's definition of an injection candidate: place a canary in
+every slot, run the task's **ground-truth** tool sequence, keep the slots whose
+canary came back. The claim it supports is therefore precise and narrower than it
+first reads:
+
+> *If an agent makes exactly the calls the ground truth prescribes, 12 of the 16
+> banking tasks expose `injection_incoming_transaction` and 4 expose a file
+> vector.*
+
+A real model does not make exactly those calls. It explores, re-reads, and calls
+tools the ground truth does not, so it can surface slots the ground truth never
+touches. **The 12/16 split is a lower bound on exposure, not an exact count**, and
+the direction of the error is known: a live agent is exposed at least as much, and
+plausibly more. Nothing in Section 3 depends on the number being exact — the
+argument is that the transaction subject dominates the file vector, and a lower
+bound is sufficient for that — but the number must be reported as what it is.
+
+### 5.2 One domain, one version
+
+AgentDojo ships four suites; everything here is the **banking** suite alone, at
+benchmark version **`v1.2.2`**, against package `agentdojo` 0.1.35. The structural
+findings — that entry and harm are different tools, that the outbound channel is
+three tools wide, that harm class cannot separate attack from task — are claims
+about this domain. Whether they generalise to the other suites is an open
+question and is not evidenced here. The code-level facts are equally
+version-bound: a later package release can change `ToolsExecutor` or the runtime's
+error handling and silently invalidate parts of Section 1.
+
+### 5.3 The environment is a research fixture, not a bank
+
+Stated because a reader who skips Section 2.3 will assume otherwise. This
+environment models no authentication and no login path; `send_money` appends a
+record and **never debits `balance`**; there is no settlement, no counterparty, no
+reversal window, no fraud team. Harm here is a change to a Python object, and any
+number this work eventually produces describes a benchmark, not a payment system.
+Two specific inheritances of that:
+
+- **A4 lockout is an assumption, not a finding.** Overwriting the password locks
+  the user out *of a real bank*. Nothing in this code supports it, it is labelled
+  as an assumption in Section 4, and it is not used as evidence anywhere.
+- **`benchmark-notes.md` is a separate document on purpose.** The scoring defects
+  recorded there change what the benchmark's numbers *mean*; they do not change
+  what the attacker can do, which is why they are kept out of the threat model.
+
+### 5.4 The grid is half empty, and the benchmark left it that way
+
+Section 4.3 lays out 18 harm cells and closes 6 from the tool surface. Of the
+remainder, AgentDojo's injection tasks reach **A1, A2 and A4 only**. They never
+target A3 (account facts), A5 (personal data) or A6 (documents), and **no
+injection task in the suite attempts denial at all**.
+
+So the reachability analysis in Section 4 is broader than the evidence behind it.
+Cells marked reachable that no injection task exercises are reachable *by
+construction from the tool surface*, not *demonstrated by an existing attack*.
+Closing that gap needs generated episodes, which is the third item in the
+professor's ordering and not part of this document.
+
+### 5.5 The attacker does not know the monitor exists
+
+Every injection in this benchmark was written before any defense was designed,
+and none of them adapts. The attacker modelled in Section 3 is therefore
+**static**: he does not probe the gateway, does not learn which calls are refused,
+and does not reshape a payload to survive a check.
+
+This is honest for the present state — there is no gateway yet to adapt to — but
+it is the first question a reviewer will ask, and it must not be left implied.
+**Once the gateway exists, an adaptive attacker stops being a limit of the
+analysis and becomes a capability that belongs in Section 3.** Left in this
+section past that point, it turns from a scope statement into an excuse.
