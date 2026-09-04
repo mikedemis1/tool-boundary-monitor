@@ -47,8 +47,8 @@ unpublished and is not in this repository.
 
 Planned, in order:
 
-- [x] Threat model — tool inventory, attacker capabilities, assets and harm
-      (Sections 2, 3 and 4 written; system model and non-goals still open)
+- [x] Threat model — system model, tool inventory, attacker capabilities,
+      assets and harm, and the limits of the analysis (all five sections)
 - [ ] Gateway architecture — event schema, canonicalization, policy store
 - [ ] Local generation of labelled benign and attack episodes
 - [ ] Hard policy layer
