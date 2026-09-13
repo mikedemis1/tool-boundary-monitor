@@ -23,6 +23,29 @@ The monitor does not try to prove the model was not manipulated. It asks a
 narrower, checkable question: **is this action authorized, related to the task
 the user actually requested, and behaviourally plausible right now?**
 
+```mermaid
+flowchart LR
+    User["User: states the task"]
+    Model["Model: proposes a tool call"]
+    Gateway["Gateway: checks actor, action, resource, arguments against policy"]
+    Tool["Tool: executes"]
+    Event["Security event log"]
+
+    User -- "task" --> Model
+    Model -- "proposed call" --> Gateway
+    Gateway -- "allow" --> Tool
+    Gateway -- "shadow, then allow" --> Tool
+    Gateway -- "shadow" --> Event
+    Gateway -- "approve: needs a human" --> Human["Human reviewer"]
+    Gateway -- "block" --> Event
+    Tool -- "result, untrusted text" --> Model
+```
+
+Design phase, not a running implementation: the diagram shows the boundary the
+threat model argues for, not code that exists yet. The gateway returns one of
+four decisions, not two: `allow`, `shadow` (record and proceed), `approve`
+(stop for a human), and `block`.
+
 ## Why the boundary and not the prompt
 
 Prompt-level defenses inspect text. They are useful, and they are not
@@ -70,6 +93,28 @@ Stated now, so it is not implied later:
   the inline gateway can stop an action.
 - Benchmark results, when they exist, will come from a research environment.
   They will not be evidence about production banking systems.
+
+## What I'd Improve
+
+- **No live-model evaluation yet.** Every fact in the threat model comes from
+  installed source and the benchmark's own ground-truth pipelines, deliberately,
+  so the analysis does not depend on one model's behaviour. But it also means
+  the 12-of-16 exposure figure is a lower bound from ground-truth traces, not
+  from a model that explores and re-reads. Running a real agent against the
+  suite is the next thing that would either confirm or correct that bound.
+- **One domain, one benchmark version.** Everything here is AgentDojo's banking
+  suite at `v1.2.2`. Whether the structural findings, that entry and harm are
+  always different tools, that harm class cannot separate an attack from a
+  legitimate task, generalise to the other three suites is an open question
+  this analysis does not answer.
+- **The harm grid is half empty of evidence.** Six of eighteen cells are closed
+  by the tool surface itself, but of what remains, AgentDojo's injection tasks
+  only reach three assets and never attempt denial at all. Closing that needs
+  generated episodes, not more reading of the same suite.
+- **The attacker modelled here is static.** None of the injections adapt to a
+  gateway that does not yet exist. Once the gateway is built, an adaptive
+  attacker stops being a limit of the analysis and becomes something the
+  gateway has to be evaluated against.
 
 ## Evaluation
 
