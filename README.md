@@ -2,14 +2,14 @@
 
 An inline security gateway for tool-using LLM agents.
 
-An LLM agent with access to real tools does not only produce text — it takes
+An LLM agent with access to real tools does not only produce text. It takes
 actions. It can read an account, freeze one, export records. It also reads data
 that other people wrote: emails, documents, transaction descriptions. It cannot
 reliably tell "what my user asked me to do" from "what I just read", because
 both arrive through the same channel.
 
 The Tool Boundary Monitor sits between the agent and the tools. The agent never
-calls a tool directly — it *proposes* a call, and the gateway evaluates it
+calls a tool directly. It *proposes* a call, and the gateway evaluates it
 **before** execution, returning one of four decisions:
 
 | Decision | Meaning |
@@ -28,8 +28,8 @@ the user actually requested, and behaviourally plausible right now?**
 Prompt-level defenses inspect text. They are useful, and they are not
 sufficient, for two reasons.
 
-First, an attacker only needs one phrasing that reads as legitimate. Second —
-and this is the part that motivates the project — **a harmful action does not
+First, an attacker only needs one phrasing that reads as legitimate. Second,
+and this is the part that motivates the project, **a harmful action does not
 require an attack at all.** An agent with a broader permission than its task
 needs can export every customer record while genuinely trying to build the
 report it was asked for. There is no malicious text anywhere in that episode,
@@ -47,9 +47,9 @@ unpublished and is not in this repository.
 
 Planned, in order:
 
-- [x] Threat model — system model, tool inventory, attacker capabilities,
+- [x] Threat model, system model, tool inventory, attacker capabilities,
       assets and harm, and the limits of the analysis (all five sections)
-- [ ] Gateway architecture — event schema, canonicalization, policy store
+- [ ] Gateway architecture, event schema, canonicalization, policy store
 - [ ] Local generation of labelled benign and attack episodes
 - [ ] Hard policy layer
 - [ ] Behavioural rate detector
@@ -83,7 +83,7 @@ of a defense are not evidence.
 
 This work accompanies a research paper in preparation, *Guarding the Tool
 Boundary: A Lightweight Hybrid Runtime Monitor for Tool-Using LLM Agents under
-Indirect Prompt Injection* (Demis, Sioutas, Stamatiou — University of Patras).
+Indirect Prompt Injection* (Demis, Sioutas, Stamatiou, University of Patras).
 The paper text is not part of this repository.
 
 ## License

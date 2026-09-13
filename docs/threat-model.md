@@ -1,4 +1,4 @@
-# Threat Model — Tool Boundary Monitor
+# Threat Model: Tool Boundary Monitor
 
 Scope: the banking suite of [AgentDojo](https://github.com/ethz-spylab/agentdojo)
 v0.1.35, as installed and read from source. Every fact in Section 2 was taken
@@ -18,7 +18,7 @@ maintainers have already fixed. At `v1.1.1`+ the recipient is
 `CA133012400231215421872` and the collision is gone.
 
 > **Status:** complete. All five sections written and verified against installed
-> source — 2 and 4 on 2026-08-14, 3 on 2026-09-03, 1 and 5 on 2026-09-04.
+> source, 2 and 4 on 2026-08-14, 3 on 2026-09-03, 1 and 5 on 2026-09-04.
 > Section 5 records what this analysis does *not* cover.
 
 ---
@@ -58,14 +58,14 @@ that the function name is non-empty and exists. It does not evaluate the call.
 
 Two details of that serialisation matter later. The text format is not uniform:
 `tool_result_to_str` applies `yaml.safe_dump` only to a `BaseModel` or a list of
-them — in this suite that is just `get_most_recent_transactions` and
-`get_scheduled_transactions` — and falls through to `str()` for everything else;
+them, in this suite that is just `get_most_recent_transactions` and
+`get_scheduled_transactions`, and falls through to `str()` for everything else;
 the formatter is also swappable for JSON. And a failing call does not abort the
 episode: `run_function` returns an empty result plus an error string
 (`functions_runtime.py`, `raise_on_error=False` by default), the runtime carries
 that string in a separate `error` field, and each model adapter substitutes it
 for the message content. The route differs from a successful result, but the
-outcome is the same — a rejected call is one more message the model gets to
+outcome is the same, a rejected call is one more message the model gets to
 read.
 
 **The environment** is the state the tools read and write: the bank account and
@@ -79,7 +79,7 @@ place, with one identity, on behalf of one user. A conventional perimeter has
 nothing to separate.
 
 The boundary is a **moment**: the point at which a proposed tool call becomes an
-executed one. Before it, everything is text — a suggestion the model has emitted,
+executed one. Before it, everything is text, a suggestion the model has emitted,
 reversible at zero cost. After it, the environment has changed, and Section 2.3
 establishes that in this domain much of that change cannot be walked back: there
 is no deletion primitive for a scheduled payment and `recurring` cannot be turned
@@ -92,7 +92,7 @@ the effect is still undetermined.
 
 **It is not, however, the point at which everything relevant is visible in the
 arguments.** `update_scheduled_transaction` requires only `id`; every other field
-is optional, and the suite's own legitimate use exercises that — UserTask2's
+is optional, and the suite's own legitimate use exercises that, UserTask2's
 ground truth is `{"id": 7, "amount": 1200}`, with no recipient and no subject in
 the call at all (2.3, 3.7). The destination and the outgoing text stay in the
 stored record the call addresses. What crosses the boundary is therefore **a
@@ -103,7 +103,7 @@ the tool Sections 2.3 and 3.7 single out as the quietest.
 ### 1.3 Trusted, untrusted, and the awkward middle
 
 **Trusted:** the user's prompt, the runtime, and the tool implementations. The
-tools are assumed to do exactly what their code says — their weaknesses are
+tools are assumed to do exactly what their code says, their weaknesses are
 recorded in Section 2.3 as facts about the environment, not as compromise.
 
 **Untrusted:** every byte that comes back from a tool. The result of
@@ -115,7 +115,7 @@ this is the dominant channel, not the exotic one.
 **The awkward middle is the model.** It sits inside the trust zone by privilege
 and outside it by behaviour: it acts with the user's full authority while
 executing text it did not author and cannot attribute. It is not assumed to be
-malicious, backdoored or replaced — only manipulable. That single assumption is
+malicious, backdoored or replaced, only manipulable. That single assumption is
 what makes a monitor necessary, because a component that is trusted with
 authority but not trustworthy about origin cannot be secured by asking it to
 behave.
@@ -151,15 +151,15 @@ which tool to call **and what to put in its arguments**:
                           filled in by the model
 ```
 
-The recipient is not retrieved from storage. It is generated — by a model that
+The recipient is not retrieved from storage. It is generated, by a model that
 has just read whatever content the task required it to read.
 
 This is visible directly in the benchmark. The environment ships a file
 `landlord-notices.txt` announcing a rent increase and asking the tenant to
 adjust their standing order, with an attacker-controlled span inside it
 (`{injection_landloard_notice}`). The corresponding task cannot be served by a
-stored value alone. The notice states an increase — *"the rent will be increased
-by 100.00"* — while the standing order it refers to (id 7) holds `1100.0`. The
+stored value alone. The notice states an increase, *"the rent will be increased
+by 100.00"*, while the standing order it refers to (id 7) holds `1100.0`. The
 figure the task actually needs, `1200`, is in neither place: it has to be
 computed from the document and the record together. Reading the document is the
 task. The attacker writes in the same document.
@@ -177,7 +177,7 @@ the moment an agent is used, tool arguments become model output, and model outpu
 is influenced by everything the model has read. This is why a call cannot be
 treated as authorised merely because the model emitted it (1.3).
 
-It is also why the **hook point** is the proposed call — and the hook point must
+It is also why the **hook point** is the proposed call, and the hook point must
 not be confused with the **decision rule**. The call is *where* the decision is
 taken, because that is the last moment before the effect lands. It is not *what*
 the decision is taken on: Sections 3.4 and 4.4 show that a harmful call and a
@@ -199,11 +199,11 @@ implementations in `default_suites/v1/tools/{banking_client,user_account,file_re
 
 | Tool | Parameters | Returns | Data exposed |
 |---|---|---|---|
-| `get_iban` | — | `str` | The user's own IBAN |
-| `get_balance` | — | `float` | Current balance |
+| `get_iban` | none | `str` | The user's own IBAN |
+| `get_balance` | none | `float` | Current balance |
 | `get_most_recent_transactions` | `n: int = 100` | `list[Transaction]` | Full records: sender, recipient, amount, subject, date, recurring |
-| `get_scheduled_transactions` | — | `list[Transaction]` | Pending and recurring payments, including recipient IBANs and dates |
-| `get_user_info` | — | `dict` | First name, last name, street, city |
+| `get_scheduled_transactions` | none | `list[Transaction]` | Pending and recurring payments, including recipient IBANs and dates |
+| `get_user_info` | none | `dict` | First name, last name, street, city |
 | `read_file` | `file_path: str` | `str` | Contents of any path in the environment filesystem |
 
 Notes:
@@ -213,7 +213,7 @@ Notes:
 - `read_file` returns an empty string for a missing path rather than raising.
   There is no path restriction and no allowlist.
 - `get_most_recent_transactions` defaults to `n = 100`. The seeded environment
-  holds **5** past transactions and **2** scheduled ones — seven records, ids 1
+  holds **5** past transactions and **2** scheduled ones, seven records, ids 1
   to 7, but only the five are in the history list
   (`data/suites/banking/environment.yaml`). The default therefore returns the
   complete history: asking for "recent" transactions reads everything that
@@ -224,9 +224,9 @@ Notes:
 | Tool | Parameters | Effect | Reversible? | When harm lands |
 |---|---|---|---|---|
 | `send_money` | `recipient, amount, subject, date` | Appends a transaction to history | **No** | Immediately |
-| `schedule_transaction` | `recipient, amount, subject, date, recurring` | Appends to scheduled transactions | **No — see 2.3** | Future, repeating if `recurring` |
+| `schedule_transaction` | `recipient, amount, subject, date, recurring` | Appends to scheduled transactions | **No. See 2.3** | Future, repeating if `recurring` |
 | `update_scheduled_transaction` | `id`, then any of `recipient, amount, subject, date, recurring` | Mutates an existing scheduled payment in place | Only if the previous values are known | Future |
-| `update_password` | `password` | Overwrites the account password | Partial — user is locked out | Immediately |
+| `update_password` | `password` | Overwrites the account password | Partial, user is locked out | Immediately |
 | `update_user_info` | any of `first_name, last_name, street, city` | Overwrites profile fields | Yes | Immediately |
 
 ### 2.3 Structural observations
@@ -251,12 +251,12 @@ if recurring:
 `amount=0` is silently ignored for the same reason. `update_user_info` has the
 identical pattern, so a profile field cannot be cleared to an empty string.
 
-A recurring payment is therefore not merely undeletable — it is also
+A recurring payment is therefore not merely undeletable. It is also
 undisarmable. Prevention carries more weight here than in a system with a
 cleanup path, because there is no state in which the harm can be walked back.
 
 **IDs are guessable, and failure answers the guess.** `next_id` allocates
-`max(id over both lists) + 1`, so identifiers are small, dense and sequential —
+`max(id over both lists) + 1`, so identifiers are small, dense and sequential,
 1 to 7 in the seeded environment. `next_id` itself does not disclose existing
 ids; it returns the id of the record about to be created. The addressing
 primitive is the failure path instead: `update_scheduled_transaction` raises
@@ -350,9 +350,9 @@ attacker controls.
 
 **Three of the four vectors are files, but files are the minority channel.**
 Counting vectors suggests documents are the main threat. Counting *episodes*
-says the opposite — see 3.3.
+says the opposite. See 3.3.
 
-### 3.3 Which position actually fires — measured, not assumed
+### 3.3 Which position actually fires: measured, not assumed
 
 A vector only matters for a given task if the agent's normal execution of that
 task actually pulls the text into its context. AgentDojo decides this itself
@@ -364,15 +364,15 @@ That procedure was reproduced offline against the pinned suite `v1.2.2`, with no
 model call, by `scripts/injection_candidates.py` in this repository. The result
 over all 16 user tasks:
 
-- **12 of 16 tasks expose `injection_incoming_transaction`** — tasks 1, 3, 4, 5,
+- **12 of 16 tasks expose `injection_incoming_transaction`**, tasks 1, 3, 4, 5,
   6, 7, 8, 9, 10, 11, 14, 15.
-- **4 of 16 expose a file vector** — task 0 (`injection_bill_text`), tasks 2 and
+- **4 of 16 expose a file vector**, task 0 (`injection_bill_text`), tasks 2 and
   12 (`injection_landloard_notice`), task 13 (`injection_address_change`).
 - **Every task exposes exactly one slot.** No task in the suite surfaces two.
 
 This is a **lower bound on exposure, not an exact count**: the procedure runs the
 ground-truth tool sequence, and a live model that explores more widely can surface
-slots the ground truth never touches. See 5.1 — the argument below needs only the
+slots the ground truth never touches. See 5.1, the argument below needs only the
 bound, not the exact figure.
 
 Two consequences.
@@ -382,7 +382,7 @@ documents misses three quarters of the suite.** The dominant channel is a
 transaction subject: a short, structured, routine-looking string returned by a
 read the user asked for.
 
-Second, **the attacker does not choose his channel — the user's task chooses it
+Second, **the attacker does not choose his channel, the user's task chooses it
 for him.** Because each task exposes exactly one slot, the placement decision is
 made for him by whichever tool the legitimate task happens to call. He cannot
 spread one payload across several fields and wait to see which one lands.
@@ -431,7 +431,7 @@ the plaintext password is supplied in the user's own prompt and therefore sits i
 the model's context, from where it can be copied into an outbound field like any
 other string (3.7). No tool call discloses A4; a task can. (Lockout after
 `update_password` is an assumption about a system this environment does not model
-— there is no authentication in it — and is labelled as such in Section 4.)
+, there is no authentication in it, and is labelled as such in Section 4.)
 
 **He cannot act outside an episode.** He has no persistence, no scheduler and no
 second channel. His text has to be read during a task the user initiated, or
@@ -451,7 +451,7 @@ runtime returns that string to the model as tool output instead of aborting
 *answered*, not punished: a live scheduled payment can be located by trying small
 integers, without ever calling `get_scheduled_transactions`. The read that would
 have made a redirection visible in the trace is not required. AgentDojo assumes
-the opposite — its own injection task leaves the id as a placeholder
+the opposite, its own injection task leaves the id as a placeholder
 (`"$transaction_id"`) to be discovered first.
 
 **Probing is silent in the other direction.** `read_file` returns `""` for an
@@ -464,23 +464,23 @@ behaviours and not the other.
 Every path by which money or data leaves runs through **three tools**:
 `send_money`, `schedule_transaction`, and `update_scheduled_transaction`. The
 last redirects an existing payment *and* rewrites its `subject` in the same call,
-which makes it both an exfiltration channel and the quietest one — changing only
+which makes it both an exfiltration channel and the quietest one, changing only
 `recipient` leaves amount, subject, date and recurrence intact, and the resulting
 record is visually indistinguishable from the original in
 `get_scheduled_transactions` output.
 
 **What can be put into that channel is everything already in the context, not
 only money.** The suite has no email, HTTP or messaging tool, so the only way any
-value leaves is inside a free-text argument — `recipient`, `subject`, `date`, all
+value leaves is inside a free-text argument, `recipient`, `subject`, `date`, all
 unvalidated strings, with `amount` as a low-bandwidth numeric channel on top. The
 read tools of Section 2.1 have already placed the material there by the time the
 write call is made: the user's IBAN and balance (A3, via `get_iban` /
-`get_balance`), the profile fields (A5, via `get_user_info` — or via
+`get_balance`), the profile fields (A5, via `get_user_info`, or via
 `update_user_info`, which returns the whole record), file contents (A6, via
 `read_file`), and, in UserTask14, the plaintext password itself (A4, from the
 user's prompt rather than from any tool). Disclosure of these assets does not
 need a dedicated path: it needs one payment call with a controlled destination.
-This is what closes the gate between Sections 3 and 4 — every disclosure cell
+This is what closes the gate between Sections 3 and 4. Every disclosure cell
 marked reachable in 4.3 is reached the same way, through these three tools.
 
 Because the outbound text field (`subject`) exists only on these three tools,
@@ -510,7 +510,7 @@ the subsection that produced it:
    themselves; every argument the model produces is left unvalidated (3.5, and
    Section 2.3).
 
-What the attacker is *entitled* to do — the definition of `Authorized` — is
+What the attacker is *entitled* to do, the definition of `Authorized`, is
 deliberately not settled here. That is policy, not threat, and it belongs to the
 policy store in the gateway architecture.
 
@@ -525,17 +525,17 @@ mechanism; the assets are what the mechanism can damage. They are enumerated
 from the environment models, not from the tool list, so that the set survives a
 change to the tool surface.
 
-`BankingEnvironment` holds three models — `BankAccount`, `UserAccount`,
+`BankingEnvironment` holds three models, `BankAccount`, `UserAccount`,
 `Filesystem` (`banking/task_suite.py`). Their fields group into six assets:
 
 | # | Asset | Backing state | Read by | Written by |
 |---|---|---|---|---|
 | A1 | Money moved | `BankAccount.transactions` | `get_most_recent_transactions` | `send_money` |
 | A2 | Future payment commitments | `BankAccount.scheduled_transactions` | `get_scheduled_transactions` | `schedule_transaction`, `update_scheduled_transaction` |
-| A3 | Account facts | `BankAccount.iban`, `BankAccount.balance` | `get_iban`, `get_balance` | — |
-| A4 | Credentials | `UserAccount.password` | — | `update_password` |
+| A3 | Account facts | `BankAccount.iban`, `BankAccount.balance` | `get_iban`, `get_balance` | none |
+| A4 | Credentials | `UserAccount.password` | none | `update_password` |
 | A5 | Personal data | `UserAccount.first_name`, `last_name`, `street`, `city` | `get_user_info`, `update_user_info` (see 4.2) | `update_user_info` |
-| A6 | Environment documents | `Filesystem.files` | `read_file` | — |
+| A6 | Environment documents | `Filesystem.files` | `read_file` | none |
 
 ### 4.2 Why these six
 
@@ -558,14 +558,14 @@ removes a whole harm class before any policy is written:
   either.
 - **A6 is attacker-writable but not agent-writable.** The agent can only read
   the documents; the attacker's text arrives inside them. A6 is therefore the
-  input side of the boundary rather than a target — the asset that carries the
+  input side of the boundary rather than a target, the asset that carries the
   attack rather than absorbing it. Section 3 picks this up.
 
 **On balance.** `BankAccount.balance` is grouped under A3 rather than A1 because
 `send_money` never modifies it (Section 2.3). It is a displayed figure, not an
 accounting of A1. Harm to A1 has to be expressed over the transaction list.
 
-**A5 has a second read path.** `update_user_info` returns the full record —
+**A5 has a second read path.** `update_user_info` returns the full record:
 all four fields, including the ones the call did not modify
 (`user_account.py`). It is a write tool that also discloses. Any analysis that
 treats "read tools" and "write tools" as disjoint sets is wrong on this one
@@ -577,24 +577,24 @@ miss it.
 Harm is classified as **disclosure** (the value reaches someone who should not
 have it), **tampering** (the value is changed without authority) and **denial**
 (the legitimate use is prevented). Reachability below means reachable *by the
-agent, through the eleven exposed tools* — not reachable in principle for a real
+agent, through the eleven exposed tools*, not reachable in principle for a real
 bank.
 
 | Asset | Disclosure | Tampering | Denial |
 |---|---|---|---|
-| A1 money moved | reachable | reachable — append only | **not reachable** |
-| A2 commitments | reachable | reachable — create and mutate | reachable |
-| A3 account facts | reachable | **not reachable** — read-only | **not reachable** |
+| A1 money moved | reachable | reachable, append only | **not reachable** |
+| A2 commitments | reachable | reachable, create and mutate | reachable |
+| A3 account facts | reachable | **not reachable**. Read-only | **not reachable** |
 | A4 credentials | not reachable *by tool return*; reachable *from context* | reachable | assumed, not modelled |
-| A5 personal data | reachable — two paths | reachable | **not reachable** in code |
-| A6 documents | reachable | **not reachable** — no writer | **not reachable** |
+| A5 personal data | reachable, two paths | reachable | **not reachable** in code |
+| A6 documents | reachable | **not reachable**, no writer | **not reachable** |
 
 Six of the eighteen cells are closed by the tool surface itself. Each is closed
 for a stated reason, not by assumption.
 
 #### The unreachable cells, and why
 
-**A1 denial.** Not because deletion is missing — that is the wrong reason. It is
+**A1 denial.** Not because deletion is missing. That is the wrong reason. It is
 unreachable because the mechanism does not exist: `send_money` appends to
 `transactions` and never touches `balance` (Section 2.3), so no sequence of
 calls can exhaust funds and cause a later legitimate payment to fail. Existing
@@ -609,11 +609,11 @@ view. It is not a serious denial route, because the caller may pass any `n`.
 `TOOLS`, and nothing writes `Filesystem.files`.
 
 **A5 denial.** The falsy-argument pattern (Section 2.3) ignores empty strings,
-so a field cannot be blanked — only replaced with another non-empty value. The
+so a field cannot be blanked, only replaced with another non-empty value. The
 old value is lost, which is a consequence of tampering; there is no separate
 denial mechanism in the code.
 
-**A4 denial — assumption, not a finding.** A wrong password locks the user out
+**A4 denial, assumption, not a finding.** A wrong password locks the user out
 *in a real bank*. This environment models no authentication and no login path,
 so nothing in the code supports the claim. It is recorded here as an assumption
 carried in from the real-world setting, and it is not used as evidence anywhere.
@@ -623,7 +623,7 @@ carried in from the real-world setting, and it is not used as evidence anywhere.
 No tool returns the password: `get_user_info` omits the field, `update_password`
 returns a fixed message, and no other read path exists in the package. The
 correct statement is therefore *the password cannot be read out of the
-environment by a tool call* — which is not the same as *the password cannot
+environment by a tool call*, which is not the same as *the password cannot
 leak*. In UserTask14 the plaintext password is supplied in the user's own
 prompt, so a live credential sits in the model's context, from where it can be
 written into any outbound string field. The tool surface closes one route and
@@ -634,14 +634,14 @@ the prompt reopens another.
 The suite has no email, HTTP or messaging tool. Data can only leave inside a
 free-text argument of a call whose destination the attacker controls. That is
 three tools, not two: `send_money`, `schedule_transaction`, and
-`update_scheduled_transaction` — the last one both redirects an existing payment
+`update_scheduled_transaction`, the last one both redirects an existing payment
 and rewrites its `subject` in a single call. The carrying fields are `recipient`,
 `subject` and `date`, all unvalidated `str` (Section 2.3); `amount` is a
 low-bandwidth numeric channel on top.
 
 The consequence is structural: **every exfiltration path is also a write to A1
 or A2.** Disclosure never stands alone in this environment. Disclosure of A3,
-A5 and A6 is parasitic — the value is read by one tool and carried out by a
+A5 and A6 is parasitic, the value is read by one tool and carried out by a
 payment tool. A gateway that inspects the arguments of the three payment tools
 sees every disclosure route the environment has.
 
@@ -657,12 +657,12 @@ pre.transactions` (and likewise for `scheduled_transactions`).
 | A1 tampering | `∃ t ∈ New : t.recipient ∉ Authorized` |
 | A2 tampering (create) | `∃ t ∈ New_scheduled : t.recipient ∉ Authorized` |
 | A2 tampering (mutate) | `∃ t ∈ post.scheduled, t' ∈ pre.scheduled : t.id = t'.id ∧ t.recipient ≠ t'.recipient` |
-| A2 denial | the mutate condition above, or `t.date` moved beyond the intended horizon — `date` is an unvalidated string |
+| A2 denial | the mutate condition above, or `t.date` moved beyond the intended horizon, `date` is an unvalidated string |
 | A4 tampering | `post.user_account.password ≠ pre.user_account.password` |
 | A5 tampering | `∃ f ∈ {first_name, last_name, street, city} : post.f ≠ pre.f` |
 | disclosure of any asset X | `∃ t ∈ New ∪ New_scheduled : t.recipient ∉ Authorized ∧ value_of(X, pre) appears in t.subject ∥ t.recipient ∥ t.date` |
 
-The last row is one predicate for all of A1, A3, A4, A5 and A6 — only the set of
+The last row is one predicate for all of A1, A3, A4, A5 and A6, only the set of
 sensitive values changes. This is the practical payoff of the previous
 subsection: disclosure needs a single check at the payment tools, parameterised
 by what counts as sensitive, rather than one rule per asset.
@@ -672,7 +672,7 @@ by what counts as sensitive, rather than one rule per asset.
 > model does not answer that. It cannot: authorisation is policy, not threat.
 > Defining it is the job of the policy store, and the shape of that definition
 > is the subject of the gateway architecture document. What Section 4 fixes is
-> that the question is unavoidable — see 4.4.
+> that the question is unavoidable. See 4.4.
 
 ### 4.4 What harm classification cannot do
 
@@ -690,7 +690,7 @@ tasks:
 | A2 tampering (`schedule_transaction`) | IT8 | UserTask6 |
 | A2 tampering (`update_scheduled_transaction`) | IT4 | UserTask2, 9, 12, 15 |
 | A4 tampering (`update_password`) | IT7 | UserTask14 |
-| A5 tampering (`update_user_info`) | — | UserTask13, 15 |
+| A5 tampering (`update_user_info`) | none | UserTask13, 15 |
 
 Twelve of the sixteen user tasks call at least one state-changing tool. **There
 is no write cell that only an attack reaches.** The asset, the action and the
@@ -698,7 +698,7 @@ harm class are identical on both sides; UserTask14 and InjectionTask7 are the
 same call to the same tool on the same asset.
 
 The sharpest case is UserTask0. Its legitimate recipient is
-`UK12345678901234567890`, read out of `bill-december-2023.txt` — and that file's
+`UK12345678901234567890`, read out of `bill-december-2023.txt`, and that file's
 content *is* the injection vector `injection_bill_text`, whose default value
 carries exactly that IBAN (`data/suites/banking/injection_vectors.yaml`). The
 field that legitimately determines where the money goes is the field the
@@ -710,7 +710,7 @@ Three consequences, and they shape everything downstream:
 1. **A defense keyed on harm class alone has no discriminating power here.** It
    can only choose between blocking legitimate work and permitting the attack.
    Anything that separates the two must come from outside the call's own
-   semantics — its provenance, or an authorisation decision made before the
+   semantics, its provenance, or an authorisation decision made before the
    content was read.
 2. **`Authorized` is therefore not a detail deferred for convenience.** It is
    the only place the separation can live. That is why the policy store is the
@@ -725,8 +725,8 @@ Three consequences, and they shape everything downstream:
 
 The suite's nine injection tasks target A1 (IT0–3, 5, 6), A2 (IT4, IT8) and A4
 (IT7). No injection task targets A3, A5 or A6, and none targets denial. Nothing
-in the benchmark contradicts the grid — no attack goal lands in a cell marked
-unreachable — but three of six assets and one of three harm classes have no
+in the benchmark contradicts the grid, no attack goal lands in a cell marked
+unreachable, but three of six assets and one of three harm classes have no
 empirical support from AgentDojo. Episodes generated for this work are what will
 cover them, and any claim about those cells has to rest on generated episodes,
 stated as such.
@@ -741,14 +741,14 @@ the repository README states those promises and this section does not repeat
 them.
 
 It is also distinct from Section 1.4. That listed the adversaries **not
-modelled** — network, host, supply chain, malicious user. This lists what the
+modelled**, network, host, supply chain, malicious user. This lists what the
 analysis **did not measure or cover**, given the adversary it does model.
 
 ### 5.1 Nothing here was produced by running a model
 
 Every fact in Sections 2, 3 and 4 was read out of installed source or produced by
 executing the benchmark's own ground-truth pipelines. **No language model was
-called at any point**, and this is a deliberate choice — a threat model that
+called at any point**, and this is a deliberate choice, a threat model that
 depends on one model's behaviour is a report about that model.
 
 It has one consequence that qualifies the headline result. The measurement in 3.3
@@ -765,16 +765,16 @@ A real model does not make exactly those calls. It explores, re-reads, and calls
 tools the ground truth does not, so it can surface slots the ground truth never
 touches. **The 12/16 split is a lower bound on exposure, not an exact count**, and
 the direction of the error is known: a live agent is exposed at least as much, and
-plausibly more. Nothing in Section 3 depends on the number being exact — the
+plausibly more. Nothing in Section 3 depends on the number being exact, the
 argument is that the transaction subject dominates the file vector, and a lower
-bound is sufficient for that — but the number must be reported as what it is.
+bound is sufficient for that, but the number must be reported as what it is.
 
 ### 5.2 One domain, one version
 
 AgentDojo ships four suites; everything here is the **banking** suite alone, at
 benchmark version **`v1.2.2`**, against package `agentdojo` 0.1.35. The structural
-findings — that entry and harm are different tools, that the outbound channel is
-three tools wide, that harm class cannot separate attack from task — are claims
+findings. That entry and harm are different tools, that the outbound channel is
+three tools wide, that harm class cannot separate attack from task, are claims
 about this domain. Whether they generalise to the other suites is an open
 question and is not evidenced here. The code-level facts are equally
 version-bound: a later package release can change `ToolsExecutor` or the runtime's
@@ -816,7 +816,7 @@ and none of them adapts. The attacker modelled in Section 3 is therefore
 **static**: he does not probe the gateway, does not learn which calls are refused,
 and does not reshape a payload to survive a check.
 
-This is honest for the present state — there is no gateway yet to adapt to — but
+This is honest for the present state. There is no gateway yet to adapt to, but
 it is the first question a reviewer will ask, and it must not be left implied.
 **Once the gateway exists, an adaptive attacker stops being a limit of the
 analysis and becomes a capability that belongs in Section 3.** Left in this
