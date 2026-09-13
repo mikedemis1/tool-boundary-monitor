@@ -16,12 +16,13 @@
 # --- Explicitly published -------------------------------------------------
 !.gitignore
 !README.md
+!SECURITY.md
 !LICENSE
 !docs/
 !scripts/
 
 # --- Never published, listed again for clarity ----------------------------
-# sources/    professor's draft + thesis — not ours to publish
+# sources/    professor's draft + thesis, not ours to publish
 # _memory/    raw working notes
 # research/   internal research notes
 # CLAUDE.md   internal working rules
