@@ -1,0 +1,41 @@
+{
+  "analysis_recorded_utc": "2026-09-18T18:06:42.919965+00:00",
+  "annotation_sha256": "9c7d08efda4ab528f876f411184c99dbc985c362973a8b8d40ac05ebc61e17c3",
+  "rates_by_annotator": {
+    "A": {
+      "total": 16,
+      "counts": {
+        "partially_expressible": 11,
+        "expressible": 2,
+        "inexpressible": 3
+      },
+      "expressibility_rate": 0.125,
+      "unresolved_authority_rate": 0.875,
+      "unresolved_authority_count": 14,
+      "untrusted_provenance_rate": 0.75
+    },
+    "B_friend": {
+      "total": 16,
+      "counts": {
+        "inexpressible": 5,
+        "partially_expressible": 11
+      },
+      "expressibility_rate": 0.0,
+      "unresolved_authority_rate": 1.0,
+      "unresolved_authority_count": 16,
+      "untrusted_provenance_rate": 1.0
+    }
+  },
+  "agreement": {
+    "uncontaminated_annotators": [
+      "B_friend"
+    ],
+    "agreement_verdict": null,
+    "agreement_source": null,
+    "note": "fewer than two uncontaminated annotators; agreement unavailable"
+  },
+  "preregistered_branch_by_uncontaminated_annotator": {
+    "B_friend": "supported"
+  },
+  "scope": "Raw submitted labels. Branch calculation is not adjudication of rubric adherence."
+}

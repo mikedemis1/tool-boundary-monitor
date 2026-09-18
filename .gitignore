@@ -15,6 +15,7 @@
 
 # --- Explicitly published -------------------------------------------------
 !.gitignore
+!.gitattributes
 !README.md
 !SECURITY.md
 !LICENSE

@@ -1,0 +1,3 @@
+# Frozen protocol hashes cover exact bytes, including line endings.
+/docs/milestone-2/pre-registration.md -text
+/docs/milestone-2/pre-registration-v2.md -text
