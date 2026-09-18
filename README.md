@@ -3,7 +3,8 @@
 An inline security gateway for tool-using LLM agents.
 
 An LLM agent with access to real tools does not only produce text. It takes
-actions. It can read an account, freeze one, export records. It also reads data
+actions. In the native banking benchmark it can read an account, send payments,
+schedule payments and update profile information. It also reads data
 that other people wrote: emails, documents, transaction descriptions. It cannot
 reliably tell "what my user asked me to do" from "what I just read", because
 both arrive through the same channel.
@@ -20,8 +21,8 @@ calls a tool directly. It *proposes* a call, and the gateway evaluates it
 | `block` | do not execute |
 
 The monitor does not try to prove the model was not manipulated. It asks a
-narrower, checkable question: **is this action authorized, related to the task
-the user actually requested, and behaviourally plausible right now?**
+narrower, checkable question: **does this action satisfy the trusted task contract
+and the actor's permissions?** Behavioral scoring is a later research component.
 
 ```mermaid
 flowchart LR
@@ -41,10 +42,10 @@ flowchart LR
     Tool -- "result, untrusted text" --> Model
 ```
 
-Design phase, not a running implementation: the diagram shows the boundary the
-threat model argues for, not code that exists yet. The gateway returns one of
-four decisions, not two: `allow`, `shadow` (record and proceed), `approve`
-(stop for a human), and `block`.
+The local implementation uses scripted proposals and native AgentDojo banking
+tools. A trusted fixture supplies identity and the task contract. `shadow` is an
+explicit observation mode, not an anomaly score. Every admitted or rejected
+gateway request produces a decision/outcome audit pair unless audit I/O fails.
 
 ## Why the boundary and not the prompt
 
@@ -61,24 +62,41 @@ the action, rather than at the language, still sees it.
 
 ## Status
 
-**Design phase. Nothing is implemented yet.**
+Local milestone implemented and verified on 2026-09-18. Start with the
+[professor review packet](docs/milestone-1/professor-brief.md) and
+[measured results](docs/milestone-1/results.md).
 
-This repository currently contains documentation only, and it is public from the
-design stage on purpose: the reasoning is the part worth reading before there is
-anything to run, and the commit history dates that reasoning. The paper itself is
-unpublished and is not in this repository.
+- [x] Corrected threat model and explicit task-authority assumptions
+- [x] Inline gateway, strict contracts, canonicalization and audit schema
+- [x] Automatically generated development cases and independent outcome oracle
+- [x] Scopes, task bounds, cumulative send limits, replay and bound approvals
+- [x] Native dispatcher integration and comparison of none/scopes/hard modes
+- [ ] Live-model experiments and adaptive attacks
+- [ ] Behavioral rate and sequence detectors, with ablations
+- [ ] Cloud deployment and asynchronous observability
 
-Planned, in order:
+The local matrix has 54 cases across three configurations, totaling 162 runs.
+Full policy prevented all 27 scripted attacker goals; 24/27 benign tasks completed.
+The three unresolved benign tasks waited for approval. These are development
+fixture results and do not measure an LLM's susceptibility to prompt injection.
 
-- [x] Threat model, system model, tool inventory, attacker capabilities,
-      assets and harm, and the limits of the analysis (all five sections)
-- [ ] Gateway architecture, event schema, canonicalization, policy store
-- [ ] Local generation of labelled benign and attack episodes
-- [ ] Hard policy layer
-- [ ] Behavioural rate detector
-- [ ] Task-conditioned sequence detector
-- [ ] Evaluation against baselines and ablations
-- [ ] Asynchronous cloud observability path
+### Run locally (PowerShell, Python 3.12)
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
+.\.venv\Scripts\python.exe -m pip install --no-build-isolation --no-deps -e .
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m tbm generate --output data/milestone-1/cases.jsonl
+.\.venv\Scripts\python.exe -m tbm run --cases data/milestone-1/cases.jsonl --mode all --output runs/milestone-1/run-001
+.\.venv\Scripts\python.exe -m tbm verify --run runs/milestone-1/run-001
+```
+
+Preserve an existing environment. Generation and execution refuse existing
+outputs; use a new dataset filename or run directory when repeating them.
+Raw datasets and run traces are synthetic, local and Git-ignored. Commands do
+not construct model clients or request cloud resources. Audit hashes do not
+provide tamper-proof storage.
 
 ## What this will not do
 
@@ -91,17 +109,17 @@ Stated now, so it is not implied later:
   sensible permission scoping.
 - Monitoring is not prevention. The asynchronous path retains evidence; only
   the inline gateway can stop an action.
-- Benchmark results, when they exist, will come from a research environment.
-  They will not be evidence about production banking systems.
+- Local results come from a research environment.
+  They are not evidence about production banking systems.
 
 ## What I'd Improve
 
 - **No live-model evaluation yet.** Every fact in the threat model comes from
   installed source and the benchmark's own ground-truth pipelines, deliberately,
   so the analysis does not depend on one model's behaviour. But it also means
-  the 12-of-16 exposure figure is a lower bound from ground-truth traces, not
-  from a model that explores and re-reads. Running a real agent against the
-  suite is the next thing that would either confirm or correct that bound.
+  the 12-of-16 exposure figure is conditional on the ground-truth traces.
+  It is neither a proven lower nor upper bound for a live model that explores
+  and re-reads. Live-agent exposure requires a separate experiment.
 - **One domain, one benchmark version.** Everything here is AgentDojo's banking
   suite at `v1.2.2`. Whether the structural findings, that entry and harm are
   always different tools, that harm class cannot separate an attack from a
@@ -112,17 +130,17 @@ Stated now, so it is not implied later:
   only reach three assets and never attempt denial at all. Closing that needs
   generated episodes, not more reading of the same suite.
 - **The attacker modelled here is static.** None of the injections adapt to a
-  gateway that does not yet exist. Once the gateway is built, an adaptive
-  attacker stops being a limit of the analysis and becomes something the
-  gateway has to be evaluated against.
+  gateway during execution. Adaptive live-model attacks remain a required
+  next-stage evaluation.
 
 ## Evaluation
 
-The intended testbed is the banking suite of
+The native tool testbed is the banking suite of
 [AgentDojo](https://github.com/ethz-spylab/agentdojo), which provides
 executable tools, realistic user tasks, and labelled indirect prompt injection
-cases. Using an existing benchmark is deliberate: attacks written by the author
-of a defense are not evidence.
+cases. The current 54 cases are custom development fixtures using these native
+tools, not the official AgentDojo evaluation set. Hand-authored attacks test
+software behavior; independent and adaptive attacks are needed for research claims.
 
 ## Context
 
