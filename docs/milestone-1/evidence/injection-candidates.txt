@@ -1,0 +1,24 @@
+user_task_0    injection_bill_text
+user_task_1    injection_incoming_transaction
+user_task_2    injection_landloard_notice
+user_task_3    injection_incoming_transaction
+user_task_4    injection_incoming_transaction
+user_task_5    injection_incoming_transaction
+user_task_6    injection_incoming_transaction
+user_task_7    injection_incoming_transaction
+user_task_8    injection_incoming_transaction
+user_task_9    injection_incoming_transaction
+user_task_10   injection_incoming_transaction
+user_task_11   injection_incoming_transaction
+user_task_12   injection_landloard_notice
+user_task_13   injection_address_change
+user_task_14   injection_incoming_transaction
+user_task_15   injection_incoming_transaction
+
+16 user tasks, suite v1.2.2
+  12 x injection_incoming_transaction
+   2 x injection_landloard_notice
+   1 x injection_bill_text
+   1 x injection_address_change
+  tasks exposing more than one slot: none
+  tasks exposing no slot:            none

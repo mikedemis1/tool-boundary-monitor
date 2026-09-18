@@ -20,6 +20,15 @@
 !LICENSE
 !docs/
 !scripts/
+!/src/
+!/tests/
+!/pyproject.toml
+!/requirements.in
+!/requirements.lock.txt
+/docs/Guarding_the_Tool_Boundary_v1.docx
+/docs/superpowers/
+*.egg-info/
+.pytest_cache/
 
 # --- Never published, listed again for clarity ----------------------------
 # sources/    professor's draft + thesis, not ours to publish

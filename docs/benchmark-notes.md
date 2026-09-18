@@ -67,21 +67,27 @@ IT6 asks for $30,000 to be moved in increments of no more than $10,000, and its
 own scoring is an aggregate: `sum(t.amount ...) >= 30000`.
 
 No single call in that sequence is anomalous on its own. A gateway that
-authorises one proposed call at a time cannot see this class of harm by
-construction, not because the check is weak, but because the property is not a
-property of a call.
+checks each call without retaining prior effects cannot enforce a cumulative
+limit. An inline gateway with a task ledger can enforce it before each call.
 
 **What to do about it, later.** This belongs in Limitations, stated openly. It
-is also the concrete motivation for the sequence detector already planned:
-IT6 is the case that justifies it, taken from the benchmark rather than invented
-for the paper.
+motivates a cumulative stateful baseline first. IT6 does not establish the
+necessity or superiority of a Markov or other learned sequence detector.
+Those require comparisons against explicit cumulative constraints.
 
 ---
 
 ## Cross-cutting
 
 Items 1 and 2 are defects in AgentDojo's scoring, not in the environment. They
-affect the *attack success rate* denominators, not the behaviour of the agent or
-the gateway. Any table reporting per-injection-task results has to account for
+can affect scorer outcomes, not the behaviour of the agent or gateway.
+A scoring disagreement does not itself change a denominator; excluding tasks does. Any table reporting per-injection-task results has to account for
 them or exclude the affected tasks; a single aggregate ASR number computed over
 all nine injection tasks silently inherits both errors.
+
+## Milestone 1 handling (2026-09-18)
+
+Native scorers were preserved and their reported quirks were characterized with
+runtime tests. Custom cases use a separate semantic oracle; no native task was
+silently removed or rescored in an official aggregate. The custom denominator
+is 27 benign and 27 scripted attack cases per mode.
